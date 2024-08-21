@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Image Upload and Prediction</title>
+    <style>
+        /* Center everything on the page */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* Optional styling to make the form look better */
+        form {
+            margin-bottom: 20px;
+        }
+
+        /* Style buttons and inputs */
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Style the images to be centered */
+        img {
+            margin: 20px 0;
+        }
+
+        /* Optional heading styling */
+        h1 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload an Image for Prediction</h1>
+    
+    <!-- Upload Form -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file" accept="image/*" required>
+        <button type="submit">Upload and Predict</button>
+    </form>
+    
+    <!-- This is where the prediction result will be displayed -->
+    <div id="predictionResult"></div>
+
+    <!-- This is where the resized face image will be displayed -->
+    <div id="resizedImageContainer"></div>
+
+    <!-- This is where the landmarked face image will be displayed -->
+    <div id="landmarkImageContainer"></div>
+
+    <script>
+        document.getElementById('uploadForm').onsubmit = async function(event) {
+            event.preventDefault();  // Prevent the default form submission behavior
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('fileInput');
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                // Send the file to the /upload endpoint
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Check if the response is OK and parse the JSON response
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Display the resized image if available
+                if (result.resized_img) {
+                    document.getElementById('resizedImageContainer').innerHTML = `
+                        <h2>Resized Face Image:</h2>
+                        <img src="data:image/jpeg;base64,${result.resized_img}" alt="Resized Face" style="max-width: 600px;"/>
+                    `;
+                }
+
+                // Display the landmarked image if available
+                if (result.landmarked_img) {
+                    document.getElementById('landmarkImageContainer').innerHTML = `
+                        <h2>Marked Face Image:</h2>
+                        <img src="data:image/jpeg;base64,${result.landmarked_img}" alt="Landmarked Face" style="max-width: 600px;"/>
+                    `;
+                }
+
+                // Display the result below the form
+                document.getElementById('predictionResult').innerHTML = `
+                    <h2>Predicted House: ${result.prediction}</h2>
+                `;
+
+            } catch (error) {
+                // Handle any errors during the fetch or response parsing
+                document.getElementById('predictionResult').innerHTML = `
+                    <h2>Error: ${error.message}</h2>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
+
+
+
