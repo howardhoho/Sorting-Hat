@@ -1,4 +1,6 @@
 from flask import render_template, request, jsonify
+from PIL import Image
+import numpy as np
 from hogwarts_sorter.myapp import app  # Import the Flask app instance
 from hogwarts_sorter.myapp.utils import make_prediction  # Correct spelling of the file
 
@@ -14,9 +16,12 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     
-    # Process the image and get the result
-    upload_folder = '/Users/howardhoho/Desktop/Sorting-Hat/hogwarts_sorter/uploads'
-    result, status = make_prediction.process_image(file, upload_folder)
+
+    image = Image.open(file)
+    image = image.convert("RGB")
+    img_cv = np.array(image)
+
+    result, status = make_prediction.process_image(img_cv)
     
     # Return the result and the status code
     return result, status

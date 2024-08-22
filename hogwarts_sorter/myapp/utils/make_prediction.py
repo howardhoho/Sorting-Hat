@@ -2,34 +2,31 @@ import os
 import numpy as np
 import tensorflow as tf
 import joblib
-from tensorflow.keras.preprocessing import image
 import cv2
 import base64
 from .face_emo import EmoExtractor
 from .face_feature import FeatureExtractor
 from flask import jsonify
 
+# Define the directory path
+model_dir = os.path.join(os.path.dirname(__file__), 'model')
+
+cnn_model_path = os.path.join(model_dir, 'new_hogwarts_cnn_model.h5')
+rf_model_path = os.path.join(model_dir, 'aug_random_forest_house_classifier.pkl')
+
 
 # Load the pre-trained models and class labels once, at the start
-cnn_model = tf.keras.models.load_model('/Users/howardhoho/Desktop/Sorting-Hat/hogwarts_sorter/model/new_hogwarts_cnn_model.h5')
-rf_model = joblib.load('/Users/howardhoho/Desktop/Sorting-Hat/hogwarts_sorter/model/aug_random_forest_house_classifier.pkl')
+cnn_model = tf.keras.models.load_model(cnn_model_path)
+rf_model = joblib.load(rf_model_path)
 class_labels = ['Gryffindor', 'Hufflepuff', 'Ravenclaw', 'Slytherin']
 
-def process_image(file, upload_folder):
+def process_image(img_cv):
     print("Started processing the image.")
-    
-    # Save the uploaded file
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
-    
-    image_path = os.path.join(upload_folder, file.filename)
-    file.save(image_path)
-    print(f"File saved at {image_path}")
 
     try:
         # Initialize Emo and Feature Extractors
-        emo_extractor = EmoExtractor(image_path)
-        feature_extractor = FeatureExtractor(image_path)
+        emo_extractor = EmoExtractor(img_cv, "model")
+        feature_extractor = FeatureExtractor(img_cv, "model")
 
         print("Initialized extractors")
 
@@ -56,8 +53,8 @@ def process_image(file, upload_folder):
         rf_probs = rf_model.predict_proba(x_face_info)[0]  # Ensure it's a 1D array
 
         # CNN Prediction
-        img = image.load_img(image_path, target_size=(150, 150))
-        img_array = image.img_to_array(img) / 255.0
+        img = cv2.resize(img_cv, (150, 150))
+        img_array = img / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
         cnn_probs = cnn_model.predict(img_array)[0]  # Also a 1D array
@@ -88,6 +85,4 @@ def process_image(file, upload_folder):
         print(f"Error: {str(e)}")
         return {'error': str(e)}, 500
 
-    finally:
-        if os.path.exists(image_path):
-            os.remove(image_path)
+

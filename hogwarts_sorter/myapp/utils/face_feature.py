@@ -1,64 +1,73 @@
 import dlib
 import cv2
 import numpy as np
+import os
+
+
+
+
 
 class FeatureExtractor:
-    def __init__(self, img_path):
-        self.img_path = img_path
+    def __init__(self, img_cv, model_folder):
+        self.img_cv = img_cv
+        self.model_dir = os.path.join(os.path.dirname(__file__), model_folder)
+        self.shape_predictor_path = os.path.join(self.model_dir, 'shape_predictor_68_face_landmarks.dat')
+        self.detector = dlib.get_frontal_face_detector()
+        self.predictor = dlib.shape_predictor(self.shape_predictor_path)
 
     def face_feature(self):
-        # Load pre-trained models for face detection and facial landmark prediction
-        detector = dlib.get_frontal_face_detector()
-        predictor = dlib.shape_predictor("/Users/howardhoho/Desktop/Sorting-Hat/hogwarts_sorter/model/shape_predictor_68_face_landmarks.dat")
-
-        # Load the image
-        img = cv2.imread(self.img_path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Convert the image to grayscale for landmark detection
+        ff_img = self.img_cv.copy()
+        gray = cv2.cvtColor(ff_img, cv2.COLOR_BGR2GRAY)
 
         # Detect faces in the image
-        faces = detector(gray)
+        faces = self.detector(gray)
 
-        # Process each detected face
+        # Check if any face is detected
+        if len(faces) == 0:
+            return None
+
+        # Process only the first detected face
         for face in faces:
             # Get facial landmarks
-            landmarks = predictor(gray, face)
+            landmarks = self.predictor(gray, face)
 
             # Align the face based on the eyes
-            landmarks = self.align_face(gray, face, landmarks)
+            landmarks = self.align_face(ff_img, landmarks)
 
-            # Recalculate facial dimensions after alignment
-            face_width = abs(landmarks.part(16).x - landmarks.part(0).x)
-            face_height = abs(landmarks.part(27).y - landmarks.part(8).y)
+            # Recalculate facial dimensions after alignment using aligned_landmarks
+            face_width = abs(landmarks[16].x - landmarks[0].x)
+            face_height = abs(landmarks[27].y - landmarks[8].y)
             face_ratio = face_width / face_height
 
-            # Normalize distances by the face width
+            # Normalize distances by face width
             normalized_distances = lambda x: x / face_width
 
             # --- Basic Distances ---
-            eye_distance = normalized_distances(abs(landmarks.part(39).x - landmarks.part(42).x))
-            nose_to_mouth_distance = normalized_distances(abs(landmarks.part(33).y - ((landmarks.part(62).y + landmarks.part(66).y) / 2)))
-            nose_to_chin_distance = normalized_distances(abs(landmarks.part(33).y - landmarks.part(8).y))
-            inner_eye_corner_distance = normalized_distances(abs(landmarks.part(39).x - landmarks.part(36).x))
-            outer_eye_corner_distance = normalized_distances(abs(landmarks.part(42).x - landmarks.part(45).x))
-            mouth_corner_distance = normalized_distances(abs(landmarks.part(48).x - landmarks.part(54).x))
+            eye_distance = normalized_distances(abs(landmarks[39].x - landmarks[42].x))
+            nose_to_mouth_distance = normalized_distances(abs(landmarks[33].y - ((landmarks[62].y + landmarks[66].y) / 2)))
+            nose_to_chin_distance = normalized_distances(abs(landmarks[33].y - landmarks[8].y))
+            inner_eye_corner_distance = normalized_distances(abs(landmarks[39].x - landmarks[36].x))
+            outer_eye_corner_distance = normalized_distances(abs(landmarks[42].x - landmarks[45].x))
+            mouth_corner_distance = normalized_distances(abs(landmarks[48].x - landmarks[54].x))
 
             # --- Eyebrow-Eye Distance ---
-            left_eyebrow_eye_distance = normalized_distances(abs(landmarks.part(19).y - landmarks.part(37).y))
-            right_eyebrow_eye_distance = normalized_distances(abs(landmarks.part(24).y - landmarks.part(44).y))
+            left_eyebrow_eye_distance = normalized_distances(abs(landmarks[19].y - landmarks[37].y))
+            right_eyebrow_eye_distance = normalized_distances(abs(landmarks[24].y - landmarks[44].y))
 
             # --- Eyebrow Tilted Degree ---
-            left_eyebrow_tilt = self.calculate_angle(landmarks.part(18), landmarks.part(19), landmarks.part(21))
-            right_eyebrow_tilt = self.calculate_angle(landmarks.part(22), landmarks.part(24), landmarks.part(25))
+            left_eyebrow_tilt = self.calculate_angle(landmarks[18], landmarks[19], landmarks[21])
+            right_eyebrow_tilt = self.calculate_angle(landmarks[22], landmarks[24], landmarks[25])
 
             # --- Symmetry ---
-            eye_symmetry = abs(normalized_distances(abs(landmarks.part(36).x - landmarks.part(39).x)) - normalized_distances(abs(landmarks.part(42).x - landmarks.part(45).x)))
-            mouth_symmetry = abs(normalized_distances(abs(landmarks.part(48).y - landmarks.part(54).y)))
-            eye_nose_symmetry = abs(normalized_distances(abs(landmarks.part(39).x - landmarks.part(33).x)) - normalized_distances(abs(landmarks.part(42).x - landmarks.part(33).x)))
-            mouth_nose_symmetry = abs(normalized_distances(abs(landmarks.part(48).x - landmarks.part(33).x)) - normalized_distances(abs(landmarks.part(54).x - landmarks.part(33).x)))
+            eye_symmetry = abs(normalized_distances(abs(landmarks[36].x - landmarks[39].x)) - normalized_distances(abs(landmarks[42].x - landmarks[45].x)))
+            mouth_symmetry = abs(normalized_distances(abs(landmarks[48].y - landmarks[54].y)))
+            eye_nose_symmetry = abs(normalized_distances(abs(landmarks[39].x - landmarks[33].x)) - normalized_distances(abs(landmarks[42].x - landmarks[33].x)))
+            mouth_nose_symmetry = abs(normalized_distances(abs(landmarks[48].x - landmarks[33].x)) - normalized_distances(abs(landmarks[54].x - landmarks[33].x)))
 
             # --- Geometric Shapes ---
-            triangle_area = self.calculate_triangle_area(landmarks.part(36), landmarks.part(45), landmarks.part(33))
-            eye_mouth_quadrilateral_area = self.calculate_quadrilateral_area(landmarks.part(36), landmarks.part(45), landmarks.part(48), landmarks.part(54))
+            triangle_area = self.calculate_triangle_area(landmarks[36], landmarks[45], landmarks[33])
+            eye_mouth_quadrilateral_area = self.calculate_quadrilateral_area(landmarks[36], landmarks[45], landmarks[48], landmarks[54])
 
             # --- Curvature ---
             jawline_curvature = self.calculate_contour_length(landmarks, 0, 16)
@@ -67,22 +76,22 @@ class FeatureExtractor:
 
             # --- Smile Intensity ---
             # Smile intensity is a combination of the mouth curvature and openness
-            mouth_openness = normalized_distances(abs(landmarks.part(62).y - landmarks.part(66).y))
+            mouth_openness = normalized_distances(abs(landmarks[62].y - landmarks[66].y))
             smile_intensity = (upper_lip_curvature + lower_lip_curvature) * mouth_openness
 
             # --- Ratios ---
-            eye_to_nose_ratio = eye_distance / normalized_distances(abs(landmarks.part(27).y - landmarks.part(33).y))
+            eye_to_nose_ratio = eye_distance / normalized_distances(abs(landmarks[27].y - landmarks[33].y))
             eye_to_face_width_ratio = eye_distance / face_width
             mouth_to_face_width_ratio = mouth_corner_distance / face_width
             nose_to_face_height_ratio = nose_to_chin_distance / face_height
 
             # --- Angles ---
-            nose_eye_angle = self.calculate_angle(landmarks.part(36), landmarks.part(33), landmarks.part(45))
-            jawline_angle = self.calculate_angle(landmarks.part(4), landmarks.part(8), landmarks.part(12))
+            nose_eye_angle = self.calculate_angle(landmarks[36], landmarks[33], landmarks[45])
+            jawline_angle = self.calculate_angle(landmarks[4], landmarks[8], landmarks[12])
 
-            # --- Aspect Ratios ---
-            mouth_width = normalized_distances(abs(landmarks.part(48).x - landmarks.part(54).x))
-            mouth_height = normalized_distances(abs(landmarks.part(62).y - landmarks.part(66).y))
+                 # --- Aspect Ratios ---
+            mouth_width = normalized_distances(abs(landmarks[48].x - landmarks[54].x))
+            mouth_height = normalized_distances(abs(landmarks[62].y - landmarks[66].y))
             if mouth_height != 0:
                 mouth_aspect_ratio = mouth_width / mouth_height
             else:
@@ -90,9 +99,9 @@ class FeatureExtractor:
 
             # --- Statistical Summary Features ---
             key_distances = [
-                normalized_distances(abs(landmarks.part(36).x - landmarks.part(45).x)),  # Eye-to-eye
-                normalized_distances(abs(landmarks.part(30).y - landmarks.part(8).y)),   # Nose to chin
-                normalized_distances(abs(landmarks.part(33).y - landmarks.part(66).y))   # Nose to lower lip
+                normalized_distances(abs(landmarks[36].x - landmarks[45].x)),  # Eye-to-eye
+                normalized_distances(abs(landmarks[30].y - landmarks[8].y)),   # Nose to chin
+                normalized_distances(abs(landmarks[33].y - landmarks[66].y))   # Nose to lower lip
             ]
             mean_distance = np.mean(key_distances)
             variance_distance = np.var(key_distances)
@@ -107,20 +116,31 @@ class FeatureExtractor:
                 variance_distance
             ]
 
-    def align_face(self, img, face, landmarks):
+        # Return None if no faces are detected
+        print("No face detected!")
+        return None
+
+
+    def align_face(self, img_cv, landmarks):
+        # Calculate the center points of the eyes using dlib's part() method
         left_eye_center = np.array([landmarks.part(36).x, landmarks.part(36).y])
         right_eye_center = np.array([landmarks.part(45).x, landmarks.part(45).y])
 
+        # Calculate the angle between the two eye centers
         dY = right_eye_center[1] - left_eye_center[1]
         dX = right_eye_center[0] - left_eye_center[0]
         angle = np.degrees(np.arctan2(dY, dX))
 
+        # Calculate the center between the two eyes
         eye_center = (left_eye_center + right_eye_center) / 2
 
+        # Get the rotation matrix for aligning the face
         M = cv2.getRotationMatrix2D(tuple(eye_center), angle, scale=1.0)
 
-        img_aligned = cv2.warpAffine(img, M, (img.shape[1], img.shape[0]))
+        # # Apply the affine transformation to align the face
+        # img_aligned = cv2.warpAffine(img_cv, M, (img_cv.shape[1], img_cv.shape[0]))
 
+        # Update the landmark positions after the transformation
         new_landmarks = []
         for i in range(68):
             x, y = landmarks.part(i).x, landmarks.part(i).y
@@ -128,9 +148,9 @@ class FeatureExtractor:
             y_new = M[1, 0] * x + M[1, 1] * y + M[1, 2]
             new_landmarks.append(dlib.point(int(x_new), int(y_new)))
 
-        aligned_landmarks = dlib.full_object_detection(face, new_landmarks)
+        # Return the updated landmark points as a list of dlib.point objects
+        return new_landmarks
 
-        return aligned_landmarks
 
     def calculate_triangle_area(self, p1, p2, p3):
         x1, y1 = p1.x, p1.y
@@ -146,8 +166,8 @@ class FeatureExtractor:
     def calculate_contour_length(self, landmarks, start_idx, end_idx):
         length = 0
         for i in range(start_idx, end_idx):
-            length += np.sqrt((landmarks.part(i).x - landmarks.part(i+1).x)**2 + 
-                              (landmarks.part(i).y - landmarks.part(i+1).y)**2)
+            length += np.sqrt((landmarks[i].x - landmarks[i+1].x)**2 + 
+                              (landmarks[i].y - landmarks[i+1].y)**2)
         return length
 
     def calculate_angle(self, p1, p2, p3):
@@ -158,29 +178,28 @@ class FeatureExtractor:
         return np.degrees(angle)
     
     def face_landmark(self):
-        # Load pre-trained models for face detection and facial landmark prediction
-        detector = dlib.get_frontal_face_detector()
-        predictor = dlib.shape_predictor("/Users/howardhoho/Desktop/Sorting-Hat/hogwarts_sorter/model/shape_predictor_68_face_landmarks.dat")
-        
-        img = cv2.imread(self.img_path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        lm_img = self.img_cv.copy()
+        gray = cv2.cvtColor(lm_img, cv2.COLOR_BGR2GRAY)
 
         # Detect faces in the image
-        faces = detector(gray)
+        faces = self.detector(gray)
 
         # Process each detected face
         for face in faces:
             # Get facial landmarks
-            landmarks = predictor(gray, face)
+            landmarks = self.predictor(gray, face)
+            marked_img = self.img_cv.copy()
 
             # Annotate the image with green circles at each landmark
             for n in range(0, 68):
                 x = landmarks.part(n).x
                 y = landmarks.part(n).y
-                marked_img = cv2.circle(img, (x, y), 2, (0, 255, 0), -1)  # Green circles of radius 2
+                marked_img = cv2.circle(marked_img, (x, y), 2, (0, 255, 0), -1)  # Green circles of radius 2
+                
+        marked_img_rgb = cv2.cvtColor(marked_img, cv2.COLOR_BGR2RGB)
 
 
-        return marked_img
+        return marked_img_rgb
 
 
 
