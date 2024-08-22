@@ -5,44 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <title>Image Upload and Prediction</title>
-    <style>
-        /* Center everything on the page */
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-
-        /* Optional styling to make the form look better */
-        form {
-            margin-bottom: 20px;
-        }
-
-        /* Style buttons and inputs */
-        input[type="file"] {
-            margin-bottom: 10px;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        /* Style the images to be centered */
-        img {
-            margin: 20px 0;
-        }
-
-        /* Optional heading styling */
-        h1 {
-            margin-bottom: 20px;
-        }
-    </style>
 </head>
 <body>
     <h1>Upload an Image for Prediction</h1>
@@ -87,8 +49,8 @@
                 // Display the resized image if available
                 if (result.resized_img) {
                     document.getElementById('resizedImageContainer').innerHTML = `
-                        <h2>Resized Face Image:</h2>
-                        <img src="data:image/jpeg;base64,${result.resized_img}" alt="Resized Face" style="max-width: 600px;"/>
+                        <h2>Face Focus:</h2>
+                        <img src="data:image/jpeg;base64,${result.resized_img}" alt="Resized Face" class="image-display"/>
                     `;
                 }
 
@@ -96,7 +58,7 @@
                 if (result.landmarked_img) {
                     document.getElementById('landmarkImageContainer').innerHTML = `
                         <h2>Marked Face Image:</h2>
-                        <img src="data:image/jpeg;base64,${result.landmarked_img}" alt="Landmarked Face" style="max-width: 600px;"/>
+                        <img src="data:image/jpeg;base64,${result.landmarked_img}" alt="Landmarked Face" class="image-display"/>
                     `;
                 }
 
@@ -115,6 +77,3 @@
     </script>
 </body>
 </html>
-
-
-

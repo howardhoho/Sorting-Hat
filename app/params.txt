@@ -1,5 +1,0 @@
-
-[a,b,c,d] = [1.5,5,1,2]
-np.array([0.4,0.1,0,0.42])
-
-combined_probs = cnn_probs_all[i] + rf_probs_all[i]*np.array([a,b,c,d])+np.array([0.4,0.1,0,0.42])
