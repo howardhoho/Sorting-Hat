@@ -1,50 +1,93 @@
-/* Center everything on the page */
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+/* styles.css */
+
+/* Basic Reset */
+* {
     margin: 0;
-    text-align: center;
-    font-family: Arial, sans-serif;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* Style the form and its elements */
-form {
+body {
+    font-family: 'Garamond', serif; /* Classic font for a magical feel */
+    background-color: #f5f5f5; /* Light grey background for a subtle effect */
+    color: #333;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    color: #d4af37; /* Golden color reminiscent of the Gryffindor house */
     margin-bottom: 20px;
+    font-size: 2.5em;
+    font-family: 'Harry P', cursive; /* Harry Potter themed font (import it in HTML) */
+}
+
+form {
+    background-color: #222; /* Dark background for the form */
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    display: inline-block;
+    padding: 30px;
+    margin-bottom: 20px;
+    width: 80%;
+    max-width: 600px;
+    text-align: left;
+    border: 2px solid #d4af37; /* Golden border */
 }
 
 input[type="file"] {
-    margin-bottom: 10px;
+    display: block;
+    width: 100%;
+    margin: 0 auto 15px;
+    padding: 10px;
+    border: 2px solid #d4af37; /* Golden border */
+    border-radius: 5px;
+    background-color: #333; /* Dark background for the input */
+    color: #fff; /* White text for the input */
 }
 
 button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
+    background-color: #4B0082; /* Deep purple color for a magical touch */
+    color: #fff;
     border: none;
     border-radius: 5px;
+    padding: 15px 30px;
+    cursor: pointer;
+    font-size: 18px;
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #6a0dad; /* Slightly lighter purple */
 }
 
-/* Style the images */
 .image-display {
-    margin: 20px 0;
-    max-width: 600px;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #d4af37; /* Golden border */
+    border-radius: 8px;
+    margin-top: 10px;
 }
 
-/* Optional heading styling */
-h1 {
-    margin-bottom: 20px;
-}
-
-h2 {
+#predictionResult {
     margin-top: 20px;
-    color: #333;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8); /* Light background for readability */
+    border: 2px solid #d4af37; /* Golden border */
+    border-radius: 8px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #000; /* Black text for contrast */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow for emphasis */
+}
+
+#resizedImageContainer, #landmarkImageContainer {
+    margin-top: 20px;
+}
+
+/* Add custom fonts */
+@import url('https://fonts.googleapis.com/css2?family=Harry+P:wght@400;700&display=swap');
+
+/* Use Harry Potter font for the header */
+h1, #predictionResult h2 {
+    font-family: 'Harry P', cursive;
 }
