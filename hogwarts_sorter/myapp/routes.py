@@ -50,9 +50,12 @@ def upload_file():
 
     result, status = make_prediction.process_image(img_cv)
     
+    result_json = result.get_json()  # Extract the JSON data as a dictionary
+    prediction_label = result_json['prediction'] 
+    
     # Upload the s3 url to RDS
     try:
-        insert_into_db(file.filename, f"s3://{s3_file_name}", result)
+        insert_into_db(file.filename, f"s3://{s3_file_name}", prediction_label)
     except Exception as e:
         print(f"Error during DB insert: {e}")
         return jsonify({'error': str(e)}), 500
