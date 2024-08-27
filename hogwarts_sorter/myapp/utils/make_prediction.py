@@ -75,11 +75,11 @@ def process_image(img_cv):
         _, l_buffer = cv2.imencode('.jpg', landmark_img)
         base64_landmark_img = base64.b64encode(l_buffer).decode('utf-8')
 
-        return jsonify({
-            'prediction': predicted_label,
-            'resized_img': base64_resized_img,
-            'landmarked_img': base64_landmark_img
-        }), 200
+        return {
+        'prediction': predicted_label,
+        'resized_img': base64_resized_img,
+        'landmarked_img': base64_landmark_img
+        }
 
     except Exception as e:
         print(f"Error: {str(e)}")

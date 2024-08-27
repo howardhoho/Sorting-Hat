@@ -48,10 +48,12 @@ def upload_file():
     
     img_cv = np.array(image)
 
-    result, status = make_prediction.process_image(img_cv)
-    
-    result_json = result.get_json()  # Extract the JSON data as a dictionary
-    prediction_label = result_json['prediction'] 
+     # Get raw prediction and images
+    result = make_prediction.process_image(img_cv)
+    # Extract the prediction and image data
+    prediction_label = result['prediction']
+    resized_img = result['resized_img']
+    landmarked_img = result['landmarked_img']
     
     # Upload the s3 url to RDS
     try:
@@ -59,13 +61,12 @@ def upload_file():
     except Exception as e:
         print(f"Error during DB insert: {e}")
         return jsonify({'error': str(e)}), 500
-
-    
     
     
      # Return the result and the status code
-    return jsonify({'message': 'File successfully uploaded to S3', 's3_url': f"s3://{s3_file_name}", 'result': result}), status
-
+    return jsonify({ 'prediction': prediction_label,
+                     'resized_img': resized_img,
+                     'landmarked_img': landmarked_img}),200
 
 if __name__ == "__main__":
     # Start the Flask app
