@@ -24,15 +24,28 @@ def upload_file():
     if file_ext not in allowed_extensions:
         return jsonify({'error': 'Unsupported file format'}), 400
     
-    # Upload the image to S3 in its original format
-    try:
-        s3_file_name = upload_image_to_s3(image, file.filename, file_ext.upper())
-    except RuntimeError as e:
-        return jsonify({'error': str(e)}), 500
+    # Map file extension to proper image format
+    format_map = {
+        'png': 'PNG',
+        'jpg': 'JPEG',
+        'jpeg': 'JPEG'
+    }
     
+    image_format = format_map.get(file_ext)  # Get the correct format for PIL.Image.save()
+
+    if not image_format:
+        return jsonify({'error': 'Unsupported file format'}), 400
 
     image = Image.open(file)
     image = image.convert("RGB")
+    
+    
+    # Upload the image to S3 in its original format
+    try:
+        s3_file_name = upload_image_to_s3(image, file.filename, image_format)  # Use mapped format
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
+    
     img_cv = np.array(image)
 
     result, status = make_prediction.process_image(img_cv)
@@ -42,7 +55,6 @@ def upload_file():
         insert_into_db(file.filename, f"s3://{s3_file_name}", result)
     except RuntimeError as e:
         return jsonify({'error': str(e)}), 500
-    
     
     
     
