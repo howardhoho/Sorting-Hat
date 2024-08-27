@@ -5,8 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <title>Image Upload and Prediction</title>
+    <style>
+        /* Container for the logo and credits */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border-bottom: 2px solid #444;
+        }
+
+        /* Styling for the logo */
+        .logo {
+            font-size: 30px;
+            font-weight: bold;
+            font-family: 'Harry P', sans-serif; /* If you have a Harry Potter-like font */
+            color: #ffeb3b;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Styling for the credits */
+        .credits {
+            font-size: 14px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+    </style>
 </head>
 <body>
+    <!-- Header containing logo and credits -->
+    <div class="header">
+        <div class="logo">
+            Sorting Hat
+        </div>
+        <div class="credits">
+            A Howard Chu Creation
+        </div>
+    </div>
+
     <h1>Upload an Image for Prediction</h1>
     
     <!-- Upload Form -->
