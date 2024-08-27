@@ -3,6 +3,8 @@ from PIL import Image
 import numpy as np
 from hogwarts_sorter.myapp import app  # Import the Flask app instance
 from hogwarts_sorter.myapp.utils import make_prediction  # Correct spelling of the file
+from hogwarts_sorter.myapp.utils.s3_upload import upload_image_to_s3
+from hogwarts_sorter.myapp.utils.rds_upload import insert_into_db
 
 @app.route('/', methods=['GET'])  # Removed endpoint='home'
 def index():
@@ -16,6 +18,18 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     
+    # Check the file extension and determine format
+    allowed_extensions = {'png', 'jpg', 'jpeg'}
+    file_ext = file.filename.rsplit('.', 1)[1].lower()
+    if file_ext not in allowed_extensions:
+        return jsonify({'error': 'Unsupported file format'}), 400
+    
+    # Upload the image to S3 in its original format
+    try:
+        s3_file_name = upload_image_to_s3(image, file.filename, file_ext.upper())
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
+    
 
     image = Image.open(file)
     image = image.convert("RGB")
@@ -23,8 +37,17 @@ def upload_file():
 
     result, status = make_prediction.process_image(img_cv)
     
-    # Return the result and the status code
-    return result, status
+    # Upload the s3 url to RDS
+    try:
+        insert_into_db(file.filename, f"s3://{s3_file_name}", result)
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
+    
+    
+    
+    
+     # Return the result and the status code
+    return jsonify({'message': 'File successfully uploaded to S3', 's3_url': f"s3://{s3_file_name}", 'result': result}), status
 
 
 if __name__ == "__main__":
