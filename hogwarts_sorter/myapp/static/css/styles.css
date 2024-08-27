@@ -19,7 +19,7 @@ h1 {
     color: #d4af37; /* Golden color reminiscent of the Gryffindor house */
     margin-bottom: 20px;
     font-size: 2.5em;
-    font-family: 'Harry P', cursive; /* Harry Potter themed font (import it in HTML) */
+    font-family: 'Harry P', sans-serif;
 }
 
 form {
