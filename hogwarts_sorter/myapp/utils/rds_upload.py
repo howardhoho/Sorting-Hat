@@ -48,6 +48,8 @@ def insert_into_db(filename, s3url, prediction):
             port=DB_PORT
         )
         cursor = connection.cursor()
+        
+        print("successfully connected to MySQL")
 
         # Perform the database insert operation
         insert_query = """
@@ -55,6 +57,8 @@ def insert_into_db(filename, s3url, prediction):
         VALUES (%s, %s, %s)
         """
         cursor.execute(insert_query, (filename, s3url, prediction))
+        
+        print("successfully insert the value")
 
         # Commit the transaction
         connection.commit()

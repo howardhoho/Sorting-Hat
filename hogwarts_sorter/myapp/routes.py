@@ -53,8 +53,10 @@ def upload_file():
     # Upload the s3 url to RDS
     try:
         insert_into_db(file.filename, f"s3://{s3_file_name}", result)
-    except RuntimeError as e:
+    except Exception as e:
+        print(f"Error during DB insert: {e}")
         return jsonify({'error': str(e)}), 500
+
     
     
     
