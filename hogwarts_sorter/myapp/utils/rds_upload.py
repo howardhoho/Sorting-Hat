@@ -36,7 +36,7 @@ def insert_into_db(filename, s3url, prediction):
     DB_USER = secret['username']
     DB_PASSWORD = secret['password']
     DB_PORT = secret['port']
-    DB_NAME = "sorting-hat"  # You will need to specify the actual DB name
+    DB_NAME = "sorting_hat"  # You will need to specify the actual DB name
 
     try:
         # Connect to the MySQL database using the retrieved credentials
