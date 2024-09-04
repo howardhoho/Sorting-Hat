@@ -1,12 +1,12 @@
 from flask import render_template, request, jsonify
 from PIL import Image
 import numpy as np
-from hogwarts_sorter.myapp import app  # Import the Flask app instance
-from hogwarts_sorter.myapp.utils import make_prediction  # Correct spelling of the file
+from hogwarts_sorter.myapp import app  
+from hogwarts_sorter.myapp.utils import make_prediction  
 from hogwarts_sorter.myapp.utils.s3_upload import upload_image_to_s3
 from hogwarts_sorter.myapp.utils.rds_upload import insert_into_db
 
-@app.route('/', methods=['GET'])  # Removed endpoint='home'
+@app.route('/', methods=['GET'])  
 def index():
     return render_template('index.html')
 
@@ -31,7 +31,7 @@ def upload_file():
         'jpeg': 'JPEG'
     }
     
-    image_format = format_map.get(file_ext)  # Get the correct format for PIL.Image.save()
+    image_format = format_map.get(file_ext)  
 
     if not image_format:
         return jsonify({'error': 'Unsupported file format'}), 400
@@ -42,7 +42,7 @@ def upload_file():
     
     # Upload the image to S3 in its original format
     try:
-        s3_file_name = upload_image_to_s3(image, file.filename, image_format)  # Use mapped format
+        s3_file_name = upload_image_to_s3(image, file.filename, image_format)  
     except RuntimeError as e:
         return jsonify({'error': str(e)}), 500
     
@@ -69,7 +69,6 @@ def upload_file():
                      'landmarked_img': landmarked_img}),200
 
 if __name__ == "__main__":
-    # Start the Flask app
     app.run(debug=True)
 
 

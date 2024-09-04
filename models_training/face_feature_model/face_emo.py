@@ -8,7 +8,7 @@ class EmoExtractor():
     
     def __init__(self, img_path):
         self.model = tf.keras.models.load_model('model/affectnet_emo_model.h5')
-        self.face_cascade = cv2.CascadeClassifier('model/haarcascade_frontalface_default.xml')  # Load the face detector
+        self.face_cascade = cv2.CascadeClassifier('model/haarcascade_frontalface_default.xml')  
         self.img_path = img_path
         
 

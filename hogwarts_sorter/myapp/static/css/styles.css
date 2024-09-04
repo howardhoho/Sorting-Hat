@@ -87,7 +87,7 @@ button:hover {
 /* Add custom fonts */
 @import url('https://fonts.googleapis.com/css2?family=Harry+P:wght@400;700&display=swap');
 
-/* Use Harry Potter font for the header */
+
 h1, #predictionResult h2 {
     font-family: 'Harry P', cursive;
 }

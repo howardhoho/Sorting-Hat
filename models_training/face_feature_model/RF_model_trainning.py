@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from imblearn.over_sampling import SMOTE
 import joblib
 
-# Load your dataset
+
 data = pd.read_csv('aug-house-train-model.csv')
 
 # Separate features and target
@@ -34,13 +34,13 @@ predict_random_forest = RandomForestClassifier()
 
 print("running......")
 
-# Set up the hyperparameter grid for tuning
+# Hyperparameter grid
 param_grid = {
     'n_estimators': [100,200,300],
     'max_depth': [10, 20, 30],
     'min_samples_split': [2, 6],
     'min_samples_leaf': [1, 2],
-    'class_weight': ['balanced', {0: 1, 1: 1, 2: 1, 3: 1}]  # Adjust class weights for imbalance
+    'class_weight': ['balanced', {0: 1, 1: 1, 2: 1, 3: 1}]  
 }
 
 # Use GridSearchCV for hyperparameter tuning
