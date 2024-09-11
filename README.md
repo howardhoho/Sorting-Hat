@@ -7,6 +7,7 @@ The objective is to sort one into one of four Hogwarts houses using 2 CNN models
 The app is hosted on AWS EC2 with RDS and MySQL for data storage.
 
 # Website
+➡️ [Click here to the website!](http://http://3.18.180.241:5000/)
 Users upload the face image, and they can get the prediction of the house and the landmarked uploaded image. 
 ![website screenshot](https://github.com/user-attachments/assets/ac6cd198-ac38-4da2-9d17-42f7b2f5543d)
 
