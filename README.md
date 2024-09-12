@@ -23,7 +23,7 @@ Users upload the face image, and they can get the prediction of the house and th
 
   2. <ins>Harry Potter Characters Face Images CNN Model</ins><br />
     Convolutional Layers: 4<br />
-    It was trained using approximately 2000 images of the 253 Harry Potter actors. Data Augmentation was adoped for dataset imbalance due to the lack of "HufflePuff" and "Ravenclaw", as well as to increase the training data.
+    It was trained using approximately 2000 images of the 253 Harry Potter actors. Data Augmentation was adopted for dataset imbalance due to the lack of "HufflePuff" and "Ravenclaw", as well as to increase the training data.
 
 - Other Models<br />
   1. <ins>Face Features Extraction </ins><br />
