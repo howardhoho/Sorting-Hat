@@ -144,3 +144,5 @@ Werkzeug @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_5
 wrapt @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_1ade1f68-8354-4db8-830b-ff3072015779vd_2hm7k/croots/recipe/wrapt_1657814407132/work
 yarl @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_2b7v_sl8vw/croot/yarl_1701105138808/work
 zipp==3.20.0
+pyheif
+pillow-heif
