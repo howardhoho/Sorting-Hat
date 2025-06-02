@@ -3,10 +3,39 @@ from PIL import Image, ExifTags
 import numpy as np
 import cv2
 import io
+
 from hogwarts_sorter.myapp import app  
 from hogwarts_sorter.myapp.utils import make_prediction  
 from hogwarts_sorter.myapp.utils.s3_upload import upload_image_to_s3
 from hogwarts_sorter.myapp.utils.rds_upload import insert_into_db
+
+# Try to import HEIC processing libraries
+try:
+    import imageio.v3 as iio
+    IMAGEIO_AVAILABLE = True
+    print("✅ imageio imported successfully")
+except ImportError:
+    IMAGEIO_AVAILABLE = False
+    print("⚠️ imageio not available")
+
+try:
+    from wand.image import Image as WandImage
+    WAND_AVAILABLE = True
+    print("✅ Wand imported successfully")
+except ImportError:
+    WAND_AVAILABLE = False
+    print("⚠️ Wand not available")
+
+try:
+    from pillow_heif import register_heif_opener
+    PILLOW_HEIF_AVAILABLE = True
+    print("✅ pillow-heif imported successfully")
+    # Register HEIF opener
+    register_heif_opener()
+    print("✅ HEIF opener registered")
+except ImportError:
+    PILLOW_HEIF_AVAILABLE = False
+    print("⚠️ pillow-heif not available")
 
 @app.route('/', methods=['GET'])  
 def index():
@@ -56,99 +85,42 @@ def upload_file():
         print(f"🔍 File size: {len(raw_data)} bytes")
         image = None
         
-        # Method 1: Try imageio (often most reliable for HEIC)
-        try:
-            print("🔍 Method 1: Trying imageio...")
-            import imageio.v3 as iio
-            image_array = iio.imread(raw_data, extension=f'.{file_ext}')
-            print(f"✅ imageio read successful - Array shape: {image_array.shape}, dtype: {image_array.dtype}")
-            image = Image.fromarray(image_array)
-            print(f"✅ PIL Image created - Size: {image.size}, Mode: {image.mode}")
-            
-        except Exception as e1:
-            print(f"❌ Method 1 (imageio) failed: {e1}")
-            
-            # Method 2: Try using macOS built-in converter (sips command)
+        # Method 1: Try imageio (proven to work)
+        if IMAGEIO_AVAILABLE:
             try:
-                print("🔍 Method 2: Trying macOS sips...")
-                import tempfile
-                import os
-                import subprocess
+                print("🔍 Converting HEIC with imageio...")
+                image_array = iio.imread(raw_data, extension=f'.{file_ext}')
+                print(f"✅ imageio read successful - Array shape: {image_array.shape}, dtype: {image_array.dtype}")
                 
-                with tempfile.NamedTemporaryFile(suffix=f'.{file_ext}', delete=False) as heic_temp:
-                    heic_temp.write(raw_data)
-                    heic_path = heic_temp.name
+                # Handle different array formats from imageio
+                if len(image_array.shape) == 4:
+                    # If it's a 4D array (batch, height, width, channels), take the first image
+                    print("🔍 Converting 4D array to 3D...")
+                    image_array = image_array[0]  # Take first image from batch
+                    print(f"🔍 After conversion - Array shape: {image_array.shape}")
                 
-                print(f"🔍 Temp HEIC file created: {heic_path}")
-                jpeg_path = heic_path.replace(f'.{file_ext}', '.jpg')
-                
-                result = subprocess.run([
-                    'sips', '-s', 'format', 'jpeg', heic_path, '--out', jpeg_path
-                ], capture_output=True, text=True)
-                
-                if result.returncode == 0:
-                    print(f"✅ sips conversion successful")
-                    image = Image.open(jpeg_path)
-                    print(f"✅ PIL Image loaded from converted JPEG - Size: {image.size}")
+                # Ensure the array is in the right format (height, width, channels)
+                if len(image_array.shape) == 3 and image_array.shape[2] == 3:
+                    # Convert to PIL Image
+                    image = Image.fromarray(image_array.astype(np.uint8))
+                    print(f"✅ PIL Image created - Size: {image.size}, Mode: {image.mode}")
                 else:
-                    raise Exception(f"sips conversion failed: {result.stderr}")
+                    raise ValueError(f"Unexpected array shape: {image_array.shape}")
                 
-                # Clean up temp files
-                os.unlink(heic_path)
-                if os.path.exists(jpeg_path):
-                    os.unlink(jpeg_path)
-                print("🔍 Temp files cleaned up")
-                    
-            except Exception as e2:
-                print(f"❌ Method 2 (sips) failed: {e2}")
-                
-                # Method 3: Try Wand (ImageMagick binding)
-                try:
-                    print("🔍 Method 3: Trying Wand/ImageMagick...")
-                    from wand.image import Image as WandImage
-                    
-                    with WandImage(blob=raw_data) as wand_img:
-                        print(f"🔍 Wand image loaded - Size: {wand_img.size}")
-                        wand_img.format = 'jpeg'
-                        wand_img.compression_quality = 85
-                        
-                        jpeg_blob = wand_img.make_blob()
-                        print(f"🔍 JPEG blob created - Size: {len(jpeg_blob)} bytes")
-                        image = Image.open(io.BytesIO(jpeg_blob))
-                        print(f"✅ PIL Image created from Wand - Size: {image.size}")
-                        
-                except Exception as e3:
-                    print(f"❌ Method 3 (Wand) failed: {e3}")
-                    
-                    # Method 4: Try pillow-heif as last resort
-                    try:
-                        print("🔍 Method 4: Trying pillow-heif...")
-                        from pillow_heif import register_heif_opener
-                        register_heif_opener()
-                        print("🔍 HEIF opener registered")
-                        
-                        bytes_io = io.BytesIO(raw_data)
-                        bytes_io.seek(0)
-                        image = Image.open(bytes_io)
-                        image.load()
-                        print(f"✅ pillow-heif successful - Size: {image.size}")
-                        
-                    except Exception as e4:
-                        print(f"❌ Method 4 (pillow-heif) failed: {e4}")
-                        print(f"❌ All HEIC conversion methods failed!")
-                        return jsonify({
-                            'error': 'Unable to convert HEIC file. Please convert to JPEG manually.',
-                            'suggestion': 'On iPhone: Open Photos → Select image → Share → Save to Files (this converts to JPEG)',
-                            'alternative': 'Or change iPhone settings: Settings → Camera → Formats → Most Compatible'
-                        }), 400
+            except Exception as e1:
+                print(f"❌ imageio conversion failed: {e1}")
+        else:
+            print("❌ imageio not available")
         
+        # If imageio failed
         if image is None:
-            print("❌ No image object created after all methods")
+            print("❌ HEIC conversion failed!")
             return jsonify({
-                'error': 'Failed to convert HEIC file. Please convert to JPEG manually.',
-                'suggestion': 'On iPhone: Open Photos → Select image → Share → Save to Files'
+                'error': 'HEIC format not supported on this server. Please convert to JPEG first.',
+                'suggestion': 'On iPhone: Open Photos → Select image → Share → Save to Files (converts to JPEG)',
+                'alternative': 'Or change iPhone camera settings: Settings → Camera → Formats → Most Compatible'
             }), 400
-            
+        
         print("🔍 Starting EXIF orientation processing...")
         # Fix EXIF orientation if needed
         try:
