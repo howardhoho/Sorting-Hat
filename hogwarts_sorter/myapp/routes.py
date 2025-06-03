@@ -1,15 +1,18 @@
 from flask import render_template, request, jsonify
 from PIL import Image
 import numpy as np
+import io
 from hogwarts_sorter.myapp import app  
 from hogwarts_sorter.myapp.utils import make_prediction  
 from hogwarts_sorter.myapp.utils.s3_upload import upload_image_to_s3
 from hogwarts_sorter.myapp.utils.rds_upload import insert_into_db
 
 # Register HEIF opener once at startup so PIL can handle HEIC/HEIF files
+HEIF_SUPPORTED = False
 try:
     from pillow_heif import register_heif_opener
     register_heif_opener()
+    HEIF_SUPPORTED = True
     print("✅ pillow-heif registered - HEIC/HEIF files supported")
 except ImportError:
     print("⚠️ pillow-heif not available - HEIC/HEIF files not supported")
@@ -32,6 +35,10 @@ def upload_file():
     if file_ext not in allowed_extensions:
         return jsonify({'error': 'Unsupported file format'}), 400
 
+    # Check if HEIC/HEIF file but pillow-heif not available
+    if file_ext in ('heic', 'heif') and not HEIF_SUPPORTED:
+        return jsonify({'error': 'HEIC/HEIF files not supported. Please install pillow-heif.'}), 400
+
     # Map file extension to proper image format for S3 upload
     format_map = {
         'png': 'PNG',
@@ -46,11 +53,21 @@ def upload_file():
     if not image_format:
         return jsonify({'error': 'Unsupported file format'}), 400
 
-    # Open image (works for all formats including HEIC/HEIF thanks to pillow-heif registration)
+    # Open image with proper handling for HEIC files
     try:
-        image = Image.open(file)
+        if file_ext in ('heic', 'heif'):
+            # For HEIC files, read the raw data first
+            file.seek(0)  # Reset file pointer
+            raw_data = file.read()
+            image = Image.open(io.BytesIO(raw_data))
+            print(f"✅ Opened HEIC file using pillow-heif: {image.size}")
+        else:
+            # For regular files, use direct opening
+            image = Image.open(file)
+            print(f"✅ Opened {file_ext.upper()} file: {image.size}")
+        
         image = image.convert("RGB")
-        print(f"✅ Successfully opened {file_ext.upper()} image: {image.size}")
+        print(f"✅ Successfully converted to RGB: {image.size}")
     except Exception as e:
         print(f"❌ Failed to open image: {str(e)}")
         return jsonify({'error': f'Failed to open image: {str(e)}'}), 400
