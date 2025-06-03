@@ -85,7 +85,7 @@ def upload_file():
         print(f"🔍 File size: {len(raw_data)} bytes")
         image = None
         
-        # Method 1: Try imageio (proven to work)
+        # Method 1: Try imageio (now working)
         if IMAGEIO_AVAILABLE:
             try:
                 print("🔍 Converting HEIC with imageio...")
@@ -251,17 +251,20 @@ def upload_file():
             'details': 'There was an error during the prediction process. Please try with a different image.'
         }), 500
     
-    # Handle both tuple and dict returns
+    # Handle dictionary returns (now consistent for all image types)
     try:
-        if isinstance(result, tuple):
-            if len(result) == 3:
-                prediction_label, resized_img, landmarked_img = result
-            else:
-                return jsonify({'error': 'Unexpected prediction result format - tuple length mismatch'}), 500
-        elif isinstance(result, dict):
+        if isinstance(result, dict):
+            if 'error' in result:
+                print(f"❌ Prediction error: {result['error']}")
+                return jsonify({
+                    'error': f'Image processing failed: {result["error"]}',
+                    'details': 'There was an error during the prediction process. Please try with a different image.'
+                }), 500
+            
             prediction_label = result.get('prediction')
             resized_img = result.get('resized_img')
             landmarked_img = result.get('landmarked_img')
+            print("🔍 Unpacked dictionary result")
             
             if prediction_label is None:
                 return jsonify({'error': 'Missing prediction in result'}), 500
